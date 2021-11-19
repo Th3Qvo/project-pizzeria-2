@@ -56,31 +56,63 @@
     constructor(id, data){
       const thisProduct = this;
 
-      thisProduct.id = id;
+      thisProduct.id = id; // dodajemy do obiektu właściwość
       thisProduct.data = data;
 
-      console.log('new Product:', thisProduct);
+      thisProduct.renderInMenu();
+      thisProduct.initAccordion();
+    }
+
+    renderInMenu(){
+      const thisProduct = this;
+
+      // generate HTML based on template
+      const generatedHTML = templates.menuProduct(thisProduct.data); // używamy metody z obiektu templates i dokładamy do niej cały obiekt z danymi produktu
+      // create element using utils.createElementFromHTML
+      thisProduct.element = utils.createDOMFromHTML(generatedHTML); // dodajemy właściwość(element) do obiektu, tworzymy DOM z wygenerowanego wyżej stringa HTML
+      // find menu container
+      const menuContainer = document.querySelector(select.containerOf.menu); // targetujemy <div></div>, do którego wstawimy wygenerowany element
+      // add element to menu
+      menuContainer.appendChild(thisProduct.element); // wstawiamy utoworzy element DOM z kodem HTML do odpowiedniego <div></div> w kodzie HTML
+    }
+
+    initAccordion(){
+      const thisProduct = this;
+
+      // find the clickable trigger
+      const clickableTrigger = thisProduct.element.querySelector(select.menuProduct.clickable); // targetuje nagłówek
+      // START add eventListener to clickable trigger
+      clickableTrigger.addEventListener('click', function(event){
+        // prevent default action
+        event.preventDefault();
+        // find active product (with class active)
+        const activeProduct = document.querySelector(select.all.menuProductsActive); // targetuje aktywny produkt
+        // if found, remove active class
+        if(activeProduct !== null && activeProduct !== thisProduct.element){ // jeżeli produkt nie jest nullem, ani wybranym aktywnym elementem
+          activeProduct.classList.remove(classNames.menuProduct.wrapperActive); // usuwa klasę active
+        }
+        // toggle class active to active element
+        thisProduct.element.classList.toggle(classNames.menuProduct.wrapperActive); // przełącza klase active to aktualnie wybranego elementu
+      });
     }
   }
 
   const app = {
-    initMenu: function(){
+    initMenu: function(){ // tworzy instancję każdego produktu korzystając z app.initData
       const thisApp = this;
-
-      console.log('thisApp.data:', thisApp.data.products);
 
       for(let productData in thisApp.data.products){
         new Product(productData, thisApp.data.products[productData]);
       }
     },
 
-    initData: function(){
+    initData: function(){ // udostępnia nam łatwy dostęp do danych
       const thisApp = this;
 
       thisApp.data = dataSource;  //dodajemy do obiektu app (this) referencję do obiektu z danymi produktów
     },
 
-    init: function(){
+    init: function(){ // odpala całą aplikację!
       const thisApp = this;
       console.log('*** App starting ***');
       console.log('thisApp:', thisApp);
