@@ -131,7 +131,30 @@
     processOrder(){
       const thisProduct = this;
 
-      console.log(thisProduct);
+      const formData = utils.serializeFormToObject(thisProduct.form); // zamienia formularz z zaznaczonymi opcjami na tablicę w JS
+
+      let price = thisProduct.data.price; // zmiennej price przypisujemy referencję do ceny w bazie danych
+
+      for(let paramId in thisProduct.data.params){ // dla każdej właściwości (nazwa) w obiekcie thisProduct.data.params
+        const param = thisProduct.data.params[paramId]; // stała param zwraca cały obiekt dla nazwy właściwości (paramId)
+
+        for(let optionId in param.options){ // dla każdej właściwości (nazwa) w obiekcie param.options
+          const option = param.options[optionId]; // stała option zwraca cały obiekt dla nazwy właściwości (optionId)
+
+          // jeżeli w obiekcie formData znajduje się właściwość o nazwie paramId i zawiera w sobie właściwość o nazwie optionId to...
+          if(formData[paramId] && formData[paramId].includes(optionId)){ 
+            if(!option.default){ // jeżeli NIE posiada właściwości default
+              price += option.price; // dodaj cenę kiedy jest zaznaczony składnik
+            }
+          } else { // ... w innym wypadku (cena price zostaje bez zmian), ale ...
+            if(option.default){ // ... jeżeli zaznaczona opcja ma właściwość default
+              price -= option.price; // odejmij wartość ceny od ceny podstawowej price
+            }
+          }
+        }
+      }
+
+      thisProduct.priceElem.innerHTML = price; // znalezione wartości wstawiamy do elementu dom, który ma wyświetlać aktualną cenę
     }
   }
 
