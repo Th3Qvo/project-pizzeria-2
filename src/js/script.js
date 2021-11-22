@@ -148,7 +148,7 @@
             }
           } else { // ... w innym wypadku (cena price zostaje bez zmian), ale ...
             if(option.default){ // ... jeżeli zaznaczona opcja ma właściwość default
-              price -= option.price; // odejmij wartość ceny od ceny podstawowej price
+              price -= option.price; // odejmij wartość ceny od ceny podstawowej price jeżeli opca zostanie odznaczona
             }
           }
         }
