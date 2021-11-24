@@ -154,7 +154,7 @@
             }
           }
 
-          // zapisujemy w stałej obrazek o klasie paramId-optionId w divie z obrazkami
+          // zapisujemy w stałej referencję do obrazka o klasie paramId-optionId w divie z obrazkami
           const optionImage = thisProduct.imageWrapper.querySelector('.' + paramId + '-' + optionId); 
 
           if(optionImage){ // jeżeli obrazek znajduje się w divie z obrazkami
