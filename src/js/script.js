@@ -88,6 +88,7 @@
       thisProduct.formInputs = thisProduct.form.querySelectorAll(select.all.formInputs); // referencja do kontrolek w formularzu
       thisProduct.cartButton = thisProduct.element.querySelector(select.menuProduct.cartButton); // referencja do buttona
       thisProduct.priceElem = thisProduct.element.querySelector(select.menuProduct.priceElem); // referencja do kontenerka z ceną produktu
+      thisProduct.imageWrapper = thisProduct.element.querySelector(select.menuProduct.imageWrapper); // referencja do wrapera na obrazki danego produktu
     }
 
     initAccordion(){
@@ -141,8 +142,9 @@
         for(let optionId in param.options){ // dla każdej właściwości (nazwa) w obiekcie param.options
           const option = param.options[optionId]; // stała option zwraca cały obiekt dla nazwy właściwości (optionId)
 
-          // jeżeli w obiekcie formData znajduje się właściwość o nazwie paramId i zawiera w sobie właściwość o nazwie optionId to...
-          if(formData[paramId] && formData[paramId].includes(optionId)){ 
+          // jeżeli w obiekcie formData[paramId] znajduje się właściwość o nazwie paramId i zawiera w sobie właściwość o nazwie optionId to...
+          const optionSelected = formData[paramId] && formData[paramId].includes(optionId);
+          if(optionSelected){ 
             if(!option.default){ // jeżeli NIE posiada właściwości default
               price += option.price; // dodaj cenę kiedy jest zaznaczony składnik
             }
@@ -151,6 +153,18 @@
               price -= option.price; // odejmij wartość ceny od ceny podstawowej price jeżeli opca zostanie odznaczona
             }
           }
+
+          // zapisujemy w stałej obrazek o klasie paramId-optionId w divie z obrazkami
+          const optionImage = thisProduct.imageWrapper.querySelector('.' + paramId + '-' + optionId); 
+
+          if(optionImage){ // jeżeli obrazek znajduje się w divie z obrazkami
+            if(optionSelected){ // jeżeli opcja jest zaznaczona
+              optionImage.classList.add(classNames.menuProduct.imageVisible); // dodaj klasę .active, która pokaże obrazek przy zaznaczeniu opcji
+            } else { // w innym przypadku (odznaczanie)
+              optionImage.classList.remove(classNames.menuProduct.imageVisible); // usuń klasę .active
+            }
+          } 
+
         }
       }
 
