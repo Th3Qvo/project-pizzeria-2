@@ -59,10 +59,12 @@
       thisProduct.id = id; // dodajemy do obiektu właściwość
       thisProduct.data = data;
 
+      // kolejność wywoływania metod ma DUŻE znaczenie dla poprawności działania kodu
       thisProduct.renderInMenu();
       thisProduct.getElements();
       thisProduct.initAccordion();
       thisProduct.initOrderForm();
+      thisProduct.initAmountWidget();
       thisProduct.processOrder();
     }
 
@@ -72,23 +74,24 @@
       // generate HTML based on template
       const generatedHTML = templates.menuProduct(thisProduct.data); // używamy metody z obiektu templates i dokładamy do niej cały obiekt z danymi produktu
       // create element using utils.createElementFromHTML
-      thisProduct.element = utils.createDOMFromHTML(generatedHTML); // dodajemy właściwość(element) do obiektu, tworzymy DOM z wygenerowanego wyżej stringa HTML
+      thisProduct.element = utils.createDOMFromHTML(generatedHTML); // dodajemy właściwość(element) do obiektu, który tworzy DOM z wygenerowanego wyżej stringa HTML
       // find menu container
       const menuContainer = document.querySelector(select.containerOf.menu); // targetujemy <div></div>, do którego wstawimy wygenerowany element
       // add element to menu
       menuContainer.appendChild(thisProduct.element); // wstawiamy utoworzy element DOM z kodem HTML do odpowiedniego <div></div> w kodzie HTML
     }
-
+    // metoda getElements jest wywoływana po renderInMenu, która szykuje właściwość thisProduct.element - dlatego w getElements możemy skorzystać z tej właściwości bez potrzeby wpisywania argumentu - jeśli zapiszemy coś do właściwości instancji, to możemy z tego korzystać w każdej jej metodzie
     getElements(){
       const thisProduct = this;
 
-      // dodajemy referencje do elementów HTML jako właściwości do naszego obiektu
+      // dodajemy referencje jako właściwości do naszego obiektu = SZYBKI DOSTĘP!
       thisProduct.accordionTrigger = thisProduct.element.querySelector(select.menuProduct.clickable); // referencja do nagłówka (clickable trigger)
       thisProduct.form = thisProduct.element.querySelector(select.menuProduct.form); // referencja do formularza produktu
       thisProduct.formInputs = thisProduct.form.querySelectorAll(select.all.formInputs); // referencja do kontrolek w formularzu
       thisProduct.cartButton = thisProduct.element.querySelector(select.menuProduct.cartButton); // referencja do buttona
-      thisProduct.priceElem = thisProduct.element.querySelector(select.menuProduct.priceElem); // referencja do kontenerka z ceną produktu
+      thisProduct.priceElem = thisProduct.element.querySelector(select.menuProduct.priceElem); // referencja do diva z ceną produktu
       thisProduct.imageWrapper = thisProduct.element.querySelector(select.menuProduct.imageWrapper); // referencja do wrapera na obrazki danego produktu
+      thisProduct.amountWidgetElem = thisProduct.element.querySelector(select.menuProduct.amountWidget); // referencja do diva z widgetem ilości
     }
 
     initAccordion(){
@@ -168,7 +171,87 @@
         }
       }
 
+      price *= thisProduct.amountWidget.value;
       thisProduct.priceElem.innerHTML = price; // znalezione wartości wstawiamy do elementu dom, który ma wyświetlać aktualną cenę
+    }
+
+    initAmountWidget(){ // metoda odpowiedziala za utworzenie nowej instancji(obiektu) klasy AmountWidget
+      const thisProduct = this;
+
+      // tworzymy instancję klasy AmountWidget i zapisujemy jako właściwość obiketu thisProduct
+      thisProduct.amountWidget = new AmountWidget(thisProduct.amountWidgetElem); // jako argument wpisujemy referencję do diva z widgetem ilości
+      // thisWidget.element = thisProduct.amountWidgetElem -- dodajemy nasłuchiwacz na stworzony event 'updated' na input
+      thisProduct.amountWidgetElem.addEventListener('updated', function(){
+        thisProduct.processOrder(); // po wykryciu 'updated' cena zostanie ponownie przeliczona
+      });
+    }
+  }
+
+  class AmountWidget {
+    // podczas tworzenia nowych instancji klasy AmountWidget odpali się constructor, dlatego musimy mu przekazać argument, na którym ma pracować
+    constructor(element){
+      const thisWidget = this;
+
+      // wywołujemy z argumentem element, który jest referencją do właściwości thisProduct.amountWidget (div z widgetem) w metodzie initAmountWidget klasy Product
+      thisWidget.getElements(element);
+      // wywołujemy metodę z argumentem, który podaje domyślą wartość inputa
+      thisWidget.setValue(thisWidget.input.value);
+      thisWidget.initActions();
+    }
+
+    getElements(element){ // argument przekazujemy dalej do metody getElements klasy AmountWidget
+      const thisWidget = this;
+
+      thisWidget.element = element; // referencja do argumentu zapisana we właściwości instancji(obiektu) thisWidget klasy AmountWidget
+      thisWidget.input = thisWidget.element.querySelector(select.widgets.amount.input); // referencja do inputu w divie z widgetem ilości
+      thisWidget.linkDecrease = thisWidget.element.querySelector(select.widgets.amount.linkDecrease); // referencja do buttona - w divie z widgetem ilości
+      thisWidget.linkIncrease = thisWidget.element.querySelector(select.widgets.amount.linkIncrease); // referencja do buttona + w divie z widgetem ilości
+    }
+
+    setValue(value){ // funkcja pośrednik, która kontroluje wartości wpisywane w inpucie widgetu ilości
+      const thisWidget = this;
+      
+      const newValue = parseInt(value); // konwertuje przekazaną inputowi wartość na liczbę
+      
+      // TU POTRZEBA WSPARCIA MENTORA!!!
+      if(!value){
+        thisWidget.value = settings.amountWidget.defaultValue; // defaultowa wartość inputa
+      }
+
+      // jeżeli obecna wartość inputa jest różna od nowej wartości ORAZ nowa wartość nie jest tekstem
+      // ORAZ nowa wartość jest większa/równa niż X ORAZ nowa wartość jest mniejsza/równa X
+      if(thisWidget.value !== newValue && !isNaN(newValue) && newValue >= settings.amountWidget.defaultMin && newValue <= settings.amountWidget.defaultMax){
+        thisWidget.value = newValue; // zastąp bierzącą wartość, nową wartością
+      }
+
+      thisWidget.input.value = thisWidget.value; // aktualizuje właściwość o wartość podaną w inpucie
+
+      thisWidget.announce(); // wywołujemy stworzony event "updated" po tym jak wiemy, że wartość inputa jest poprawna
+    }
+
+    initActions(){
+      const thisWidget = this;
+
+      thisWidget.input.addEventListener('change', function(){
+        thisWidget.setValue(thisWidget.input.value);
+      });
+
+      thisWidget.linkDecrease.addEventListener('click', function(event){
+        event.preventDefault();
+        thisWidget.setValue(thisWidget.value - 1);
+      });
+
+      thisWidget.linkIncrease.addEventListener('click', function(event){
+        event.preventDefault();
+        thisWidget.setValue(thisWidget.value + 1);
+      });
+    }
+
+    announce(){
+      const thisWidget = this;
+
+      const event = new Event('updated'); // klasa Event jest wbudowana w silnik JS i pozwala tworzyć nowe eventy
+      thisWidget.element.dispatchEvent(event);
     }
   }
 
