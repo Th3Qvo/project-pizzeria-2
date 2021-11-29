@@ -271,7 +271,7 @@
 
       // wywołujemy z argumentem element, który jest referencją do właściwości thisProduct.amountWidget (div z widgetem) w metodzie initAmountWidget klasy Product
       thisWidget.getElements(element);
-      // wywołujemy metodę z argumentem, który podaje domyślą wartość inputa
+      // wywołujemy metodę z argumentem, który podaje wartość inputa
       thisWidget.setValue(thisWidget.input.value);
       thisWidget.initActions();
     }
@@ -372,7 +372,7 @@
       const generatedDOM = utils.createDOMFromHTML(generatedHTML);
 
       thisCart.dom.productList.appendChild(generatedDOM);
-      
+
       // dodaje produkty do tablicy thisCart.products > argumenty przekazywane dalej do klasy CartProduct
       thisCart.products.push(new CartProduct(menuProduct, generatedDOM));
     }
@@ -392,8 +392,7 @@
       thisCartProduct.params = menuProduct.params;
 
       thisCartProduct.getElements(element);
-
-      console.log('thisCartProduct', thisCartProduct);
+      thisCartProduct.initAmountWidget();
     }
 
     getElements(element){
@@ -406,6 +405,20 @@
       thisCartProduct.dom.price = thisCartProduct.dom.wrapper.querySelector(select.cartProduct.price);
       thisCartProduct.dom.edit = thisCartProduct.dom.wrapper.querySelector(select.cartProduct.edit);
       thisCartProduct.dom.remove = thisCartProduct.dom.wrapper.querySelector(select.cartProduct.remove);
+    }
+
+    initAmountWidget(){
+      const thisCartProduct = this;
+
+      // patrz: Product > initAmountWidget
+      thisCartProduct.amountWidget = new AmountWidget(thisCartProduct.dom.amountWidget);
+      thisCartProduct.dom.amountWidget.addEventListener('updated', function(){
+        // aktualna wartość widgetu jest dostępna pod właściwością value w thisCartProduct.amountWidget
+        // value to wartość wpisywana w pole inputa // patrz: class AmountWidget
+        thisCartProduct.amount = thisCartProduct.amountWidget.value;
+        thisCartProduct.price = thisCartProduct.amount * thisCartProduct.priceSingle;
+        thisCartProduct.dom.price.innerHTML = thisCartProduct.price;
+      });
     }
   }
 
