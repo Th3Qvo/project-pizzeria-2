@@ -328,7 +328,15 @@
     announce(){
       const thisWidget = this;
 
-      const event = new Event('updated'); // klasa Event jest wbudowana w silnik JS i pozwala tworzyć nowe eventy
+      // klasa Event/CustomEvent jest wbudowana w silnik JS i pozwala tworzyć nowe eventy
+      const event = new CustomEvent('updated', {
+        // przy tym zapisie tworzymy event, który możemy kontrolować
+        // bez bubbles event jest emitowany tylko na jednym elemencie, na tym, na któym odpalamy dispatchEvent
+        // z opcją bubbles będzie nadal emitowany na tym elemencie, ale również na jego rodzicu, dziadku, itd...
+        // np.: event 'click', bąbelkuje domyślnie, dzięki czemu przekazywany jest dalej
+        // w wypadku customowego eventu bąbelkowanie musimy włączyć sami
+        bubbles: true
+      }); 
       thisWidget.element.dispatchEvent(event);
     }
   }
@@ -353,6 +361,10 @@
       thisCart.dom.wrapper = element; // element DOM okalający cały koszyk, w nim szukamy poszczególnych elementów koszyka
       thisCart.dom.toggleTrigger = thisCart.dom.wrapper.querySelector(select.cart.toggleTrigger);
       thisCart.dom.productList = thisCart.dom.wrapper.querySelector(select.cart.productList);
+      thisCart.dom.deliveryFee = thisCart.dom.wrapper.querySelector(select.cart.deliveryFee);
+      thisCart.dom.subtotalPrice = thisCart.dom.wrapper.querySelector(select.cart.subtotalPrice);
+      thisCart.dom.totalPrice = thisCart.dom.wrapper.querySelectorAll(select.cart.totalPrice);
+      thisCart.dom.totalNumber = thisCart.dom.wrapper.querySelector(select.cart.totalNumber);
     }
 
     initActions(){
@@ -361,6 +373,11 @@
       thisCart.dom.toggleTrigger.addEventListener('click', function(event){
         event.preventDefault();
         thisCart.dom.wrapper.classList.toggle(classNames.cart.wrapperActive); // przełączamy klasę active na wraperze koszyka
+      });
+
+      // Nasłuchujemy tutaj na liste produktów, w której umieszczamy produkty, w których znajduje się widget liczby sztuk, który generuje ten event. Dzieki właściwości bubbles "usłyszymy" go na tej liście. Jest to dla nas informacja, że w "którymś" z produktów doszło do zmiany ilości sztuk. Nieważne, w któym. Waże, żeby uruchomić metodę update(); żeby ponownie przeliczyć kwoty.
+      thisCart.dom.productList.addEventListener('updated', function(){
+        thisCart.update();
       });
     }
 
@@ -375,6 +392,45 @@
 
       // dodaje produkty do tablicy thisCart.products > argumenty przekazywane dalej do klasy CartProduct
       thisCart.products.push(new CartProduct(menuProduct, generatedDOM));
+
+      thisCart.update(); // aktualizuje dane zawsze po dodaniu nowego produktu
+    }
+
+    update(){
+      const thisCart = this;
+
+      // podstawowa kwota za dostawę
+      thisCart.deliveryFee = settings.cart.defaultDeliveryFee;
+      // liczba wszystkich produktów w koszyku
+      thisCart.totalNumber = 0;
+      // cena za produkty bez dostawy
+      thisCart.subtotalPrice = 0;
+
+      for(let product of thisCart.products){
+        // zwiększamy totalNumber o wartość właściwości amount, obiektu product
+        thisCart.totalNumber += product.amount;
+        // zwiększamy subtotalPrice o wartość właściwości price, obiektu product
+        thisCart.subtotalPrice += product.price;
+      }
+
+      if(thisCart.totalNumber == 0){ // jeżeli w koszyku nie ma produktów
+        thisCart.deliveryFee = 0; // dostawa równa jest 0
+      } else { // w innym wypadku
+        thisCart.deliveryFee = settings.cart.defaultDeliveryFee; // dostawa równa się defaultDeliveryFee
+      }
+
+      // suma do zapłaty równa cenie produktów i cenie dostawy
+      thisCart.totalPrice = thisCart.subtotalPrice + thisCart.deliveryFee;
+
+      // dodajemy wartości liczbowe do elemetów DOM w HTML
+      thisCart.dom.deliveryFee.innerHTML = thisCart.deliveryFee;
+      thisCart.dom.totalNumber.innerHTML = thisCart.totalNumber;
+      thisCart.dom.subtotalPrice.innerHTML = thisCart.subtotalPrice;
+
+      // pętla dla każdego z elemtów DOM, gdzie ma być wyświetlana suma zamówienia
+      for(let elementTotalPrice of thisCart.dom.totalPrice){
+        elementTotalPrice.innerHTML = thisCart.totalPrice;
+      }
     }
   }
 
