@@ -5,7 +5,8 @@
 
   const select = {
     templateOf: {
-      menuProduct: '#template-menu-product', // templatka do Handlebars
+      menuProduct: '#template-menu-product',
+      cartProduct: '#template-cart-product',
     },
     containerOf: {
       menu: '#product-list',
@@ -17,7 +18,7 @@
       formInputs: 'input, select',
     },
     menuProduct: {
-      clickable: '.product__header', // nagłówek produktu, który po kliknięciu ma sie rozwinąć
+      clickable: '.product__header',
       form: '.product__order',
       priceElem: '.product__total-price .price',
       imageWrapper: '.product__images',
@@ -26,17 +27,38 @@
     },
     widgets: {
       amount: {
-        input: 'input[name="amount"]',
+        input: 'input.amount',
         linkDecrease: 'a[href="#less"]',
         linkIncrease: 'a[href="#more"]',
       },
+    },
+    cart: {
+      productList: '.cart__order-summary',
+      toggleTrigger: '.cart__summary',
+      totalNumber: `.cart__total-number`,
+      totalPrice: '.cart__total-price strong, .cart__order-total .cart__order-price-sum strong',
+      subtotalPrice: '.cart__order-subtotal .cart__order-price-sum strong',
+      deliveryFee: '.cart__order-delivery .cart__order-price-sum strong',
+      form: '.cart__order',
+      formSubmit: '.cart__order [type="submit"]',
+      phone: '[name="phone"]',
+      address: '[name="address"]',
+    },
+    cartProduct: {
+      amountWidget: '.widget-amount',
+      price: '.cart__product-price',
+      edit: '[href="#edit"]',
+      remove: '[href="#remove"]',
     },
   };
 
   const classNames = {
     menuProduct: {
-      wrapperActive: 'active', // target aktywnej klasy produktu
+      wrapperActive: 'active',
       imageVisible: 'active',
+    },
+    cart: {
+      wrapperActive: 'active',
     },
   };
 
@@ -45,11 +67,15 @@
       defaultValue: 1,
       defaultMin: 1,
       defaultMax: 9,
-    }
+    },
+    cart: {
+      defaultDeliveryFee: 20,
+    },
   };
 
   const templates = {
-    menuProduct: Handlebars.compile(document.querySelector(select.templateOf.menuProduct).innerHTML), // skompilowana templatka
+    menuProduct: Handlebars.compile(document.querySelector(select.templateOf.menuProduct).innerHTML),
+    cartProduct: Handlebars.compile(document.querySelector(select.templateOf.cartProduct).innerHTML),
   };
 
   class Product {
@@ -129,6 +155,7 @@
       thisProduct.cartButton.addEventListener('click', function(event){
         event.preventDefault();
         thisProduct.processOrder();
+        thisProduct.addToCart();
       });
     }
 
@@ -171,7 +198,8 @@
         }
       }
 
-      price *= thisProduct.amountWidget.value;
+      thisProduct.priceSingle = price; // cena jednostkowa po ustaleniu parametrów produktu > wpisana przed mnożeniem przez value
+      price *= thisProduct.amountWidget.value; // tutaj daje nam wynik mnożenia price * ilość produktów
       thisProduct.priceElem.innerHTML = price; // znalezione wartości wstawiamy do elementu dom, który ma wyświetlać aktualną cenę
     }
 
@@ -185,10 +213,59 @@
         thisProduct.processOrder(); // po wykryciu 'updated' cena zostanie ponownie przeliczona
       });
     }
+
+    addToCart(){
+      const thisProduct = this;
+      // dostęp do metody add w klasie cart > thisProduct.prepareCartProduct() później w metodzie add występuje jako argument menuProduct
+      app.cart.add(thisProduct.prepareCartProduct());
+    }
+
+    prepareCartProduct(){
+      const thisProduct = this;
+
+      const productSummary = {}; // przygotowujemy obiekt, który zostanie dodany do koszyka
+      productSummary.id = thisProduct.id;
+      productSummary.name = thisProduct.data.name;
+      productSummary.amount = thisProduct.amountWidget.value;
+      productSummary.priceSingle = thisProduct.priceSingle;
+      productSummary.price = productSummary.priceSingle * productSummary.amount;
+      productSummary.params = thisProduct.prepareCartProductParams();
+
+      return productSummary;
+    }
+
+    prepareCartProductParams(){
+      const thisProduct = this;
+
+      const formData = utils.serializeFormToObject(thisProduct.form); // zamienia formularz z zaznaczonymi opcjami na tablicę w JS
+
+      let params = {}; // zmienna, w której zapisujemy obiekt z parametrami produktu
+
+      for(let paramId in thisProduct.data.params){ // pętle skopiowane z processOrder();
+        const param = thisProduct.data.params[paramId];
+
+        params[paramId] = { // dodajemy strukturę obiektu params dla wybranego produktu > zmienna powyżej pętli
+          label: param.label, // etykieta (właściwość) wzięta z obiektu w stałej param
+          options: {} // pusty obiekt, do którego będziemy wstawiać zaznaczone opcje z pętli poniżej
+        };
+
+        for(let optionId in param.options) {
+          const option = param.options[optionId];
+          
+          const optionSelected = formData[paramId] && formData[paramId].includes(optionId);
+          if(optionSelected){
+            // w obiekcie params[paramId].options definiujemy nazwę właściwości options[optionId] i dodajemy do niej wartość option.label (wartość właściwości label w obiekcie option)
+            params[paramId].options[optionId] = option.label;
+          }
+        }
+      }
+
+      return params; // zwracamy obiekt z parametrami produktu
+    }
   }
 
   class AmountWidget {
-    // podczas tworzenia nowych instancji klasy AmountWidget odpali się constructor, dlatego musimy mu przekazać argument, na którym ma pracować
+    // podczas tworzenia nowych instancji klasy AmountWidget odpali się constructor, dlatego musimy mu przekazać argument, na którym ma pracować (referencja z klasy Product, metody initAmountWidget)
     constructor(element){
       const thisWidget = this;
 
@@ -213,7 +290,8 @@
       
       const newValue = parseInt(value); // konwertuje przekazaną inputowi wartość na liczbę
       
-      // TU POTRZEBA WSPARCIA MENTORA!!!
+      // Jeśli value ma jakąkolwiek wartość negatywną, undefined, NaN, false, to if się odpali, bo np !undefined = true, !false = true itd.
+      // Czyli wszystko co "złe" z wykrzyknikiem na początku odwraca się.
       if(!value){
         thisWidget.value = settings.amountWidget.defaultValue; // defaultowa wartość inputa
       }
@@ -255,6 +333,48 @@
     }
   }
 
+  class Cart {
+    // konstruktor tej klasy oczekuje na przekazanie referencji do diva , w któym ten koszyk ma być obecny
+    // przekażemy jej więc wrapper (czyli kontener, element okalający) koszyka (select.containerOf.cart) > app.initCart
+    constructor(element){
+      const thisCart = this;
+
+      thisCart.products = []; // w tej właściwości [tablica] będziemy przechowywać produkty dodane do koszyka
+
+      thisCart.getElements(element);
+      thisCart.initActions();
+    }
+
+    getElements(element){
+      const thisCart = this;
+
+      thisCart.dom = []; // dodajemy właściwość [tablica], w której będziemy przechowywać referencje do obiektów DOM
+
+      thisCart.dom.wrapper = element; // element DOM okalający cały koszyk, w nim szukamy poszczególnych elementów koszyka
+      thisCart.dom.toggleTrigger = thisCart.dom.wrapper.querySelector(select.cart.toggleTrigger);
+      thisCart.dom.productList = thisCart.dom.wrapper.querySelector(select.cart.productList);
+    }
+
+    initActions(){
+      const thisCart = this;
+
+      thisCart.dom.toggleTrigger.addEventListener('click', function(event){
+        event.preventDefault();
+        thisCart.dom.wrapper.classList.toggle(classNames.cart.wrapperActive); // przełączamy klasę active na wraperze koszyka
+      });
+    }
+
+    add(menuProduct){
+      const thisCart = this;
+
+      const generatedHTML = templates.cartProduct(menuProduct);
+
+      const generatedDOM = utils.createDOMFromHTML(generatedHTML);
+
+      thisCart.dom.productList.appendChild(generatedDOM);
+    }
+  }
+
   const app = {
     initMenu: function(){ // tworzy instancję każdego produktu korzystając z app.initData
       const thisApp = this;
@@ -270,16 +390,19 @@
       thisApp.data = dataSource;  //dodajemy do obiektu app (this) referencję do obiektu z danymi produktów
     },
 
+    initCart: function(){ // tworzy instancję produktu w koszyku
+      const thisApp = this;
+
+      const cartElem = document.querySelector(select.containerOf.cart);
+      thisApp.cart = new Cart(cartElem); // instancja klasy Cart zapisana jako właściwość obiektu thisApp pozwala na wywołanie poza obiektem
+    },
+
     init: function(){ // odpala całą aplikację!
       const thisApp = this;
-      console.log('*** App starting ***');
-      console.log('thisApp:', thisApp);
-      console.log('classNames:', classNames);
-      console.log('settings:', settings);
-      console.log('templates:', templates);
 
       thisApp.initData();
       thisApp.initMenu();
+      thisApp.initCart();
     },
   };
 
