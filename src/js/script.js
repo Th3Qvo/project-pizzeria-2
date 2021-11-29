@@ -223,7 +223,7 @@
     prepareCartProduct(){
       const thisProduct = this;
 
-      const productSummary = {}; // przygotowujemy obiekt, który zostanie dodany do koszyka
+      const productSummary = {}; // przygotowujemy obiekt, który zostanie dodany do koszyka (później występuje jako argument menuProduct)
       productSummary.id = thisProduct.id;
       productSummary.name = thisProduct.data.name;
       productSummary.amount = thisProduct.amountWidget.value;
@@ -244,7 +244,7 @@
       for(let paramId in thisProduct.data.params){ // pętle skopiowane z processOrder();
         const param = thisProduct.data.params[paramId];
 
-        params[paramId] = { // dodajemy strukturę obiektu params dla wybranego produktu > zmienna powyżej pętli
+        params[paramId] = { // dodajemy strukturę obiektu params dla każdego produktu w pętli > zmienna powyżej pętli
           label: param.label, // etykieta (właściwość) wzięta z obiektu w stałej param
           options: {} // pusty obiekt, do którego będziemy wstawiać zaznaczone opcje z pętli poniżej
         };
@@ -254,7 +254,7 @@
           
           const optionSelected = formData[paramId] && formData[paramId].includes(optionId);
           if(optionSelected){
-            // w obiekcie params[paramId].options definiujemy nazwę właściwości options[optionId] i dodajemy do niej wartość option.label (wartość właściwości label w obiekcie option)
+            // w obiekcie params[paramId].options definiujemy nazwę właściwości options[optionId] i dodajemy do niej wartość option.label (wartość właściwości label w obiekcie option, czyli nazwę składnika, która póżniej będzie wyświetlana w elemencie DOM)
             params[paramId].options[optionId] = option.label;
           }
         }
@@ -367,11 +367,45 @@
     add(menuProduct){
       const thisCart = this;
 
-      const generatedHTML = templates.cartProduct(menuProduct);
+      const generatedHTML = templates.cartProduct(menuProduct); // patrz: Product > renderInMenu();
 
       const generatedDOM = utils.createDOMFromHTML(generatedHTML);
 
       thisCart.dom.productList.appendChild(generatedDOM);
+      
+      // dodaje produkty do tablicy thisCart.products > argumenty przekazywane dalej do klasy CartProduct
+      thisCart.products.push(new CartProduct(menuProduct, generatedDOM));
+    }
+  }
+
+  class CartProduct {
+    // konstruktor przyjmuje dwa argumenty, referencję do obiektu podsumowania (produkt w koszyku) oraz referencę do utworzonego dla tego produktu elementu HTML (generatedDOM)
+    constructor(menuProduct, element){
+      const thisCartProduct = this;
+
+      // tworzymy łatwy dostęp do właściwości obiektu menuProducts (produktu znajdującego się w koszyku)
+      thisCartProduct.id = menuProduct.id;
+      thisCartProduct.name = menuProduct.name;
+      thisCartProduct.amount = menuProduct.amount;
+      thisCartProduct.priceSingle = menuProduct.priceSingle;
+      thisCartProduct.price = menuProduct.price;
+      thisCartProduct.params = menuProduct.params;
+
+      thisCartProduct.getElements(element);
+
+      console.log('thisCartProduct', thisCartProduct);
+    }
+
+    getElements(element){
+      const thisCartProduct = this;
+
+      thisCartProduct.dom = {}; // patrz: Cart > getElements();
+
+      thisCartProduct.dom.wrapper = element;
+      thisCartProduct.dom.amountWidget = thisCartProduct.dom.wrapper.querySelector(select.cartProduct.amountWidget);
+      thisCartProduct.dom.price = thisCartProduct.dom.wrapper.querySelector(select.cartProduct.price);
+      thisCartProduct.dom.edit = thisCartProduct.dom.wrapper.querySelector(select.cartProduct.edit);
+      thisCartProduct.dom.remove = thisCartProduct.dom.wrapper.querySelector(select.cartProduct.remove);
     }
   }
 
