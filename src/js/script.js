@@ -71,6 +71,11 @@
     cart: {
       defaultDeliveryFee: 20,
     },
+    db: {
+      url: '//localhost:3131',
+      products: 'products',
+      orders: 'orders',
+    },
   };
 
   const templates = {
@@ -534,14 +539,25 @@
       const thisApp = this;
 
       for(let productData in thisApp.data.products){
-        new Product(productData, thisApp.data.products[productData]);
+        new Product(thisApp.data.products[productData].id, thisApp.data.products[productData]); // nazwa, obiekt z danymi
       }
     },
 
     initData: function(){ // udostępnia nam łatwy dostęp do danych
       const thisApp = this;
 
-      thisApp.data = dataSource;  //dodajemy do obiektu app (this) referencję do obiektu z danymi produktów
+      thisApp.data = {}; // pusty obiekt na dane produktów, w któym zapiszemy zparsowany obiekt z danymi z serwera
+
+      const url = settings.db.url + '/' + settings.db.products;
+
+      fetch(url) // zapytanie do serwera - domyślnie GET
+        .then(function(rawResponse){ // kiedy serwer odpowie, otrzymany obiekt 
+          return rawResponse.json(); // zwróć w formacie .json
+        })
+        .then(function(parsedResponse){ // nastepnie, obiekt w formacie .json zamień na obiekt JS-owy
+          thisApp.data.products = parsedResponse; // zapisz jako właściwość obiektu thisApp.data
+          thisApp.initMenu(); // i uruchom metodę renderującą menu na stonie na podstawie otrzymanych danych
+        });
     },
 
     initCart: function(){ // tworzy instancję produktu w koszyku
@@ -555,7 +571,6 @@
       const thisApp = this;
 
       thisApp.initData();
-      thisApp.initMenu();
       thisApp.initCart();
     },
   };
