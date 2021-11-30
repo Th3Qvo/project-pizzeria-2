@@ -379,6 +379,11 @@
       thisCart.dom.productList.addEventListener('updated', function(){
         thisCart.update();
       });
+    
+      // Wywołując event zawarliśmy w nim odwołanie do instancji thisCartProduct (CartProduct > remove();). Właśnie w ten sposób (event.detail.cartProduct) teraz ją odbieramy i przekazujemy do metody thisCart.remove
+      thisCart.dom.productList.addEventListener('remove', function(){
+        thisCart.remove(event.detail.cartProduct);
+      });
     }
 
     add(menuProduct){
@@ -432,6 +437,22 @@
         elementTotalPrice.innerHTML = thisCart.totalPrice;
       }
     }
+
+    // metoda remove przyjmuje jeden argument, referencję do instancji produktu, który chcemy usunąć (patrz: Cart > initAction(); > CartProduct > remove();)
+    remove(productToRemove){
+      const thisCart = this;
+
+      //dzięki wbudowanej w silknik JS metodzie indexOf(); wyszukujemy index produktu, który chcemy usunąć z koszyka (naszej tablicy z produktami) (productToRemove)
+      const indexOfProduct = thisCart.products.indexOf(productToRemove);
+      // dzięki wbudowanej w silnik JS metodzie splice(); usuwamy znaleziony wyżej element do usunicia poprzez (index od któego zaczynamy modyfikację tablicy, licza określająca ilość elementów do usunięcia)
+      thisCart.products.splice(indexOfProduct, 1);
+
+      // usuwamy reprezentację produktu z HTML
+      // znajdujemy produkt, któy chcemy usunąć we wraperze koszyka i wywołujemy na nim metodę remove();
+      productToRemove.dom.wrapper.remove();
+
+      thisCart.update();
+    }
   }
 
   class CartProduct {
@@ -449,6 +470,7 @@
 
       thisCartProduct.getElements(element);
       thisCartProduct.initAmountWidget();
+      thisCartProduct.initAction();
     }
 
     getElements(element){
@@ -474,6 +496,35 @@
         thisCartProduct.amount = thisCartProduct.amountWidget.value;
         thisCartProduct.price = thisCartProduct.amount * thisCartProduct.priceSingle;
         thisCartProduct.dom.price.innerHTML = thisCartProduct.price;
+      });
+    }
+
+    remove(){
+      const thisCartProduct = this;
+
+      // patrz: AmountWidget > announce();
+      const event = new CustomEvent('remove', {
+        bubbles: true,
+        // We właściwości detail możemy przekazywać dowolne informace do handlera eventu. To ważna informacja. Kiedy emitowaliśmy event informujący o zmianie sztuk, to np. Cart nie interesowało, co dokłądnie się zmieniło. Sam fakt, że event się wyemitował był wystarczający. Tym razem Cart będzie musiało wiedzieć co trzeba usunąć. W tym przypadku przekazujemy więc wraz z eventem dodatkowo odwołanie do tej instancji, dla której kliknięto guzik usuwania.
+        // detail można więc rozumieć jako "szczegóły", które mają być przekazane wraz z eventem
+        detail: {
+          cartProduct: thisCartProduct,
+        },
+      });
+
+      thisCartProduct.dom.wrapper.dispatchEvent(event);
+    }
+
+    initAction(){
+      const thisCartProduct = this;
+
+      thisCartProduct.dom.edit.addEventListener('click', function(event){
+        event.preventDefault();
+      });
+
+      thisCartProduct.dom.remove.addEventListener('click', function(event){
+        event.preventDefault();
+        thisCartProduct.remove();
       });
     }
   }
