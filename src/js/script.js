@@ -370,6 +370,10 @@
       thisCart.dom.subtotalPrice = thisCart.dom.wrapper.querySelector(select.cart.subtotalPrice);
       thisCart.dom.totalPrice = thisCart.dom.wrapper.querySelectorAll(select.cart.totalPrice);
       thisCart.dom.totalNumber = thisCart.dom.wrapper.querySelector(select.cart.totalNumber);
+      thisCart.dom.form = thisCart.dom.wrapper.querySelector(select.cart.form);
+      thisCart.dom.formSubmit = thisCart.dom.wrapper.querySelector(select.cart.formSubmit);
+      thisCart.dom.phone = thisCart.dom.wrapper.querySelector(select.cart.phone);
+      thisCart.dom.address = thisCart.dom.wrapper.querySelector(select.cart.address);
     }
 
     initActions(){
@@ -388,6 +392,11 @@
       // Wywołując event zawarliśmy w nim odwołanie do instancji thisCartProduct (CartProduct > remove();). Właśnie w ten sposób (event.detail.cartProduct) teraz ją odbieramy i przekazujemy do metody thisCart.remove
       thisCart.dom.productList.addEventListener('remove', function(){
         thisCart.remove(event.detail.cartProduct);
+      });
+
+      thisCart.dom.form.addEventListener('submit', function(event){
+        event.preventDefault();
+        thisCart.sendOrder();
       });
     }
 
@@ -457,6 +466,40 @@
       productToRemove.dom.wrapper.remove();
 
       thisCart.update();
+    }
+
+    sendOrder(){
+      const thisCart = this;
+
+      // stała z adresem endpointu, z którym się będziemy komunikować
+      const url = settings.db.url + '/' + settings.db.orders;
+
+      // obiekt z informacjami o zamówieniu, które wyślemy na serwer
+      let payload = {};
+
+      payload.address = thisCart.dom.address.value;
+      payload.phone = thisCart.dom.phone.value;
+      payload.totalPrice = thisCart.totalPrice;
+      payload.subtotalPrice = thisCart.subtotalPrice;
+      payload.totalNumber = thisCart.totalNumber;
+      payload.deliveryFee = thisCart.deliveryFee;
+      payload.products = [];
+
+      // dodajemy element tablicy o nazwie prod i zawartości utworzonej przez metodę CartProduct > getData();
+      for(let prod of thisCart.products){
+        payload.products.push(prod.getData());
+      }
+
+      // ustawienia dla metody fetch();
+      const options = {
+        method: 'POST', // rodzaj metody
+        headers: { // nagłówki, informacja, że serwer ma się spodziewać jsona
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload), // obiekt JS przekonwertowany do JSON
+      };
+
+      fetch(url, options); // połączenie z serwerem
     }
   }
 
@@ -531,6 +574,21 @@
         event.preventDefault();
         thisCartProduct.remove();
       });
+    }
+
+    // tworzymy obiekt z danymi, które chcemy umieścić w Cart > sendOrder(); > payload.products
+    getData(){
+      const thisCartProduct = this;
+
+      let orderData = {};
+      orderData.id = thisCartProduct.id;
+      orderData.amount = thisCartProduct.amount;
+      orderData.price = thisCartProduct.price;
+      orderData.priceSingle = thisCartProduct.priceSingle;
+      orderData.name = thisCartProduct.name;
+      orderData.params = thisCartProduct.params;
+
+      return orderData;
     }
   }
 
