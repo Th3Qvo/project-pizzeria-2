@@ -41,7 +41,7 @@ const app = {
     thisApp.productList = document.querySelector(select.containerOf.menu);
     // dodajemy do niej eventListener nasłuchujący eventu stworzonego w Product > addToCart
     thisApp.productList.addEventListener('add-to-cart', function(event){
-      app.cart.add(event.detail.product); // odnosimy się do thisProduct poprzez właściwości eventu :)
+      app.cart.add(event.detail.product); // odnosimy się do thisProduct poprzez właściwości eventu
     });
   },
 
