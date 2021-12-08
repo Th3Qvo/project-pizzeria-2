@@ -390,7 +390,7 @@
       });
     
       // Wywołując event zawarliśmy w nim odwołanie do instancji thisCartProduct (CartProduct > remove();). Właśnie w ten sposób (event.detail.cartProduct) teraz ją odbieramy i przekazujemy do metody thisCart.remove
-      thisCart.dom.productList.addEventListener('remove', function(){
+      thisCart.dom.productList.addEventListener('remove', function(event){
         thisCart.remove(event.detail.cartProduct);
       });
 
