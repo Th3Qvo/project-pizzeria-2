@@ -11,8 +11,8 @@ export const select = {
     booking: '.booking-wrapper',
   },
   all: {
-    menuProducts: '#product-list > .product', // pojedynczy produkt w templatce
-    menuProductsActive: '#product-list > .product.active', // pojedynczy produkt w templatce - AKTYWNY!
+    menuProducts: '#product-list > .product',
+    menuProductsActive: '#product-list > .product.active',
     formInputs: 'input, select',
   },
   menuProduct: {

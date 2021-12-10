@@ -3,6 +3,7 @@ import {settings, select, classNames} from './settings.js';
 // export default > możemy wykorzystać gdy mamy jeden obiekt w pliku (np. Klasę)
 import Product from './components/Product.js';
 import Cart from './components/Cart.js';
+import Booking from './components/Booking.js';
 
 const app = {
   // metoda uruchamiana w momencie odświeżenia strony
@@ -20,8 +21,7 @@ const app = {
 
     // ustalamy ID strony, która ma zostać otwarta jako domyślna
     let pageMatchingHash = thisApp.pages[0].id;
-
-    console.log(thisApp.pages[0].id, thisApp.pages[1].id);
+    
     // sprawdzamy czy ID strony pasuje do ID wydobytego z hashu strony
     // jeśli tak odpalamy stronę o tym ID
     // jeśli nie odpalamy stronę z pageMatchingHash
@@ -67,6 +67,14 @@ const app = {
         link.getAttribute('href') == '#' + pageId
       );
     }
+  },
+
+  initBooking: function(){
+    const thisApp = this;
+
+    thisApp.bookingContainer = document.querySelector(select.containerOf.booking);
+
+    thisApp.booking = new Booking(thisApp.bookingContainer);
   },
 
   initMenu: function(){ // tworzy instancję każdego produktu korzystając z app.initData
@@ -115,6 +123,7 @@ const app = {
     thisApp.initPages();
     thisApp.initData();
     thisApp.initCart();
+    thisApp.initBooking();
   },
 };
 
