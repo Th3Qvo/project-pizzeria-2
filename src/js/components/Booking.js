@@ -1,5 +1,5 @@
 /* eslint-disable indent */
-import {templates, select} from '../settings.js';
+import {templates, select, settings} from '../settings.js';
 import { utils } from '../utils.js';
 import AmountWidget from './AmountWidget.js';
 import DatePicker from './DatePicker.js';
@@ -11,8 +11,59 @@ class Booking {
 
     thisBooking.render(element);
     thisBooking.initWidgets();
+		thisBooking.getData();
   }
 
+	getData(){
+		const thisBooking = this;
+
+		const startDayParam = settings.db.dateStartParamKey + '=' + utils.dateToStr(thisBooking.datePicker.minDate);
+		const endDayParam = settings.db.dateEndParamKey + '=' + utils.dateToStr(thisBooking.datePicker.maxDate);
+
+		const params = {
+			booking: [
+				startDayParam,
+				endDayParam,
+			],
+			eventsCurrent: [
+				settings.db.notRepeatParam,
+				startDayParam,
+				endDayParam,
+
+			],
+			eventsRepeat: [
+				settings.db.repeatParam,
+				endDayParam,
+			],
+		};
+
+		const urls = {
+			bookings:      settings.db.url + '/' + settings.db.bookings + '?' + params.booking.join('&'),
+			eventsCurrent: settings.db.url + '/' + settings.db.events   + '?' + params.eventsCurrent.join('&'),
+			eventsRepeat:  settings.db.url + '/' + settings.db.events   + '?' + params.eventsRepeat.join('&'),
+		};
+
+		Promise.all([
+			fetch(urls.bookings),
+			fetch(urls.eventsCurrent),
+			fetch(urls.eventsRepeat),
+		])
+			.then(function(allResponses){
+				const bookingsResponse = allResponses[0];
+				const eventsCurrentResponse = allResponses[1];
+				const eventsRepeatResponse = allResponses[2];
+				return Promise.all([
+					bookingsResponse.json(),
+					eventsCurrentResponse.json(),
+					eventsRepeatResponse.json(),
+				]);
+			})
+			.then(function([bookings, eventsCurrent, eventsRepeat]){
+				console.log(bookings, eventsCurrent, eventsRepeat);
+			});
+	}
+
+	
 	render(element){
 		const thisBooking = this;
 
@@ -48,12 +99,12 @@ class Booking {
 			console.log('updated!');
 		});
 
-		thisBooking.datePickerWidget = new DatePicker(thisBooking.dom.datePickerWrapper);
+		thisBooking.datePicker = new DatePicker(thisBooking.dom.datePickerWrapper);
 		thisBooking.dom.datePickerWrapper.addEventListener('updated', function(){
 			console.log('updated!');
 		});
 
-		thisBooking.hourPickerWrapper = new HourPicker(thisBooking.dom.hourPickerWrapper);
+		thisBooking.hourPicker = new HourPicker(thisBooking.dom.hourPickerWrapper);
 		thisBooking.dom.hourPickerWrapper.addEventListener('updated', function(){
 			console.log('updated!');
 		});
