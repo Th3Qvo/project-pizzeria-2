@@ -1,4 +1,4 @@
-/* eslint-disable indent */
+
 import {templates, select, settings, classNames} from '../settings.js';
 import { utils } from '../utils.js';
 import AmountWidget from './AmountWidget.js';
@@ -9,7 +9,7 @@ class Booking {
   constructor(element){
     const thisBooking = this;
 
-    thisBooking.tableInfo = [];
+    thisBooking.selectedTable;
 
     thisBooking.render(element);
     thisBooking.initWidgets();
@@ -179,6 +179,10 @@ class Booking {
 
     thisBooking.dom.wrapper.addEventListener('updated', function(){
       thisBooking.updateDOM();
+      for(let table of thisBooking.dom.tables){
+        table.classList.remove(classNames.booking.tableSelected);
+      }
+      thisBooking.selectedTable = undefined;
     });
 
     thisBooking.dom.floor.addEventListener('click', function(event){
@@ -187,25 +191,32 @@ class Booking {
     });
   }
 
-	initTables(clickedItem){
-		const thisBooking = this;
+  initTables(clickedItem){
+    const thisBooking = this;
 
-		if(clickedItem.classList.contains(classNames.booking.table)){
-      
-			if(!clickedItem.classList.contains(classNames.booking.tableBooked)){
+    /* CHANGING SELECTED TABLE CLASS */
+    if(!clickedItem.classList.contains(classNames.booking.tableBooked)){
 
-				clickedItem.classList.toggle(classNames.booking.tableSelected);
+      clickedItem.classList.toggle(classNames.booking.tableSelected);
 
-        if(clickedItem.classList.contains(classNames.booking.tableSelected)){
-          thisBooking.tableInfo.push(clickedItem.getAttribute('data-table'));
-        } else {
-          thisBooking.tableInfo.splice(thisBooking.tableInfo.indexOf(clickedItem.getAttribute('data-table')), 1);
+      for(let table of thisBooking.dom.tables){
+        if(table != clickedItem){
+          table.classList.remove(classNames.booking.tableSelected);
         }
-			} else {
-        alert('We are sorry! This table is unavaiable.');
       }
-		}
-	}
+    } else {
+      alert('We are sorry! This table is unavaiable.');
+    }
+
+    /* GETTING SELECTED TABLE NUMBER */
+    if(clickedItem.classList.contains(classNames.booking.tableSelected)){
+      thisBooking.selectedTable = clickedItem.getAttribute('data-table');
+    } else {
+      thisBooking.selectedTable = undefined;
+    }
+
+    console.log(thisBooking.selectedTable);
+  }
 }
 
 export default Booking;
