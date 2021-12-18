@@ -166,6 +166,11 @@ class Booking {
     thisBooking.dom.tables = thisBooking.dom.wrapper.querySelectorAll(select.booking.tables);
 
     thisBooking.dom.floor = thisBooking.dom.wrapper.querySelector(select.booking.floor);
+
+    thisBooking.dom.submitBtn = thisBooking.dom.wrapper.querySelector(select.booking.submitBtn);
+    thisBooking.dom.phoneInput = thisBooking.dom.wrapper.querySelector(select.booking.phoneInput);
+    thisBooking.dom.addressInput = thisBooking.dom.wrapper.querySelector(select.booking.addressInput);
+    thisBooking.dom.startersCheckbox = thisBooking.dom.wrapper.querySelectorAll(select.booking.startersCheckbox);
   }
 
   initWidgets(){
@@ -188,6 +193,11 @@ class Booking {
     thisBooking.dom.floor.addEventListener('click', function(event){
       event.preventDefault();
       thisBooking.initTables(event.target);
+    });
+
+    thisBooking.dom.submitBtn.addEventListener('click', function(event){
+      event.preventDefault();
+      thisBooking.sendBooking();
     });
   }
 
@@ -214,8 +224,39 @@ class Booking {
     } else {
       thisBooking.selectedTable = undefined;
     }
+  }
 
-    console.log(thisBooking.selectedTable);
+  sendBooking(){
+    const thisBooking = this;
+
+    let payload = {};
+
+    payload.date = thisBooking.datePicker.value;
+    payload.hour = thisBooking.hourPicker.value;
+    payload.table = parseInt(thisBooking.selectedTable);
+    payload.duration = parseInt(thisBooking.hoursAmountWidget.value);
+    payload.ppl = parseInt(thisBooking.peopleAmountWidget.value);
+    payload.phone = thisBooking.dom.phoneInput.value;
+    payload.address = thisBooking.dom.addressInput.value;
+    payload.starters = [];
+
+    for(let starter of thisBooking.dom.startersCheckbox){
+      if(starter.checked){
+        payload.starters.push(starter.value);
+      }
+    }
+
+    const url = settings.db.url + '/' + settings.db.bookings;
+
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload),
+    };
+
+    fetch(url, options);
   }
 }
 
