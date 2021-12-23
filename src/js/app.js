@@ -84,6 +84,17 @@ const app = {
     thisApp.homeContainer = document.querySelector(select.containerOf.home);
 
     thisApp.home = new Home(thisApp.homeContainer);
+
+    thisApp.orderBtn = document.querySelector(select.home.order);
+    thisApp.bookBtn = document.querySelector(select.home.book);
+
+    thisApp.orderBtn.addEventListener('click', function(){
+      app.activatePage('order');
+    });
+
+    thisApp.bookBtn.addEventListener('click', function(){
+      app.activatePage('booking');
+    });
   },
 
   initMenu: function(){ // tworzy instancję każdego produktu korzystając z app.initData

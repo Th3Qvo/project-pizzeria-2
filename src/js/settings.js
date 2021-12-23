@@ -72,6 +72,10 @@ export const select = {
     edit: '[href="#edit"]',
     remove: '[href="#remove"]',
   },
+  home: {
+    order: '.order-online',
+    book: '.book-table',
+  },
 };
 
 export const classNames = {
