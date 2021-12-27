@@ -137,7 +137,7 @@ const app = {
     });
   },
 
-  init: function(){ // odpala całą aplikację!
+  init: function(){ // odpala całą aplikację!!!
     const thisApp = this;
 
     thisApp.initPages();
